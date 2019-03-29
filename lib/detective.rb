@@ -1,9 +1,9 @@
 # frozen_string_literal: true
+
 require_relative 'build_output_parser.rb'
 require 'json'
 
 class Detective
-
   def self.build_detective
     new(BuildOutputParser.new)
   end
@@ -15,6 +15,7 @@ class Detective
   def investigate(build_path, output_path)
     raise ArgumentError, 'Missing build to investigate' unless build_path
     raise ArgumentError, 'Missing output path' unless output_path
+
     full_output_path = full_path(output_path)
 
     results = @parser.parse_raw_from lift_state(full_output_path), full_path(build_path)
@@ -24,7 +25,7 @@ class Detective
 
   def report_for(report_path)
     raw_report = File.read full_path(report_path)
-    
+
     JSON.parse(raw_report, symbolize_names: true)
   end
 

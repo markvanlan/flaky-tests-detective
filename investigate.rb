@@ -1,5 +1,6 @@
 # frozen_string_literal: true
-#!/usr/bin/env ruby
+
+# !/usr/bin/env ruby
 require_relative 'lib/detective.rb'
 
 build_path = ARGV[0]

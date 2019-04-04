@@ -23,10 +23,12 @@ class Detective
     File.write(full_output_path, results.to_json)
   end
 
-  def report_for(report_path)
+  def report_for(report_builder, report_path)
     raw_report = File.read full_path(report_path)
 
-    JSON.parse(raw_report, symbolize_names: true)
+    raw_report = JSON.parse(raw_report, symbolize_names: true)
+
+    report_builder.parse_raw_from(raw_report)
   end
 
   private

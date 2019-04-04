@@ -1,9 +1,9 @@
-require_relative './spec_helper.rb'
-require_relative '../lib/build_output_parser.rb'
+require_relative '../spec_helper.rb'
+require_relative '../../lib/build_output_parser.rb'
 
 RSpec.describe BuildOutputParser do
   describe 'Build metadata' do
-    let(:raw_output_path) { File.expand_path('examples/succesful_run.txt', __dir__) }
+    let(:raw_output_path) { File.expand_path('../examples/succesful_run.txt', __dir__) }
 
     it 'Increments the amount of runs' do
       clean_state = subject.clean_state
@@ -23,7 +23,7 @@ RSpec.describe BuildOutputParser do
   end
 
   describe 'Parsing a succesful build' do
-    let(:raw_output_path) { File.expand_path('examples/succesful_run.txt', __dir__) }
+    let(:raw_output_path) { File.expand_path('../examples/succesful_run.txt', __dir__) }
 
     it 'Returns no errors' do
       failed_tests = subject.parse_raw_from subject.clean_state, raw_output_path
@@ -34,7 +34,7 @@ RSpec.describe BuildOutputParser do
   end
 
   describe 'Parsing a build with JS errors' do
-    let(:raw_output_path) { File.expand_path('examples/qunit_failed_run.txt', __dir__) }
+    let(:raw_output_path) { File.expand_path('../examples/qunit_failed_run.txt', __dir__) }
     let(:test_name) { :test_failed_user_card }
 
     it 'Parses and stores failed tests' do
@@ -61,7 +61,7 @@ RSpec.describe BuildOutputParser do
       expect(failed_test[:failures]).to eq 2
     end
 
-    it 'xxx' do
+    it 'Stores the seed' do
       expected_seed = '304691216275098133962654566400469666965'
 
       parsed_output = subject.parse_raw_from subject.clean_state, raw_output_path
@@ -72,7 +72,7 @@ RSpec.describe BuildOutputParser do
   end
 
   describe 'Parsing a build with RSpec errors' do
-    let(:raw_output_path) { File.expand_path('examples/rspec_failed_run.txt', __dir__) }
+    let(:raw_output_path) { File.expand_path('../examples/rspec_failed_run.txt', __dir__) }
     let(:test_name) { :spec_requests_finish_installation_controller_spec_rb_13 }
 
     it 'Parses and stores failed tests' do
@@ -99,7 +99,7 @@ RSpec.describe BuildOutputParser do
       expect(failed_test[:failures]).to eq 2
     end
 
-    it 'xxx' do
+    it 'Stores the seed' do
       expected_seed = '21827'
 
       parsed_output = subject.parse_raw_from subject.clean_state, raw_output_path

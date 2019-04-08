@@ -7,14 +7,16 @@ class BuildOutputParser
 
   def parse_raw_from(state, raw_output_path)
     commit_hash = parse_commit_hash(raw_output_path)
+    ruby_errors = parse_ruby_errors(state[:ruby_tests], raw_output_path, commit_hash)
+    js_errors = parse_js_errors(state[:js_tests], raw_output_path, commit_hash)
 
     {
       metadata: {
         runs: (state.dig(:metadata, :runs) + 1),
-        last_commit_hash: commit_hash
+        last_commit_hash: commit_hash,
+        new_errors: ruby_errors[:new_errors] || js_errors[:new_errors]
       },
-      ruby_tests: parse_ruby_errors(state[:ruby_tests], raw_output_path, commit_hash),
-      js_tests: parse_js_errors(state[:js_tests], raw_output_path, commit_hash)
+      ruby_tests: ruby_errors[:errors], js_tests: js_errors[:errors]
     }
   end
 
@@ -37,7 +39,7 @@ class BuildOutputParser
 
   def parse_ruby_errors(state, raw_output_path, commit_hash)
     initial_s = {
-      failure_zone: false, seed: nil, errors: state,
+      failure_zone: false, seed: nil, errors: state, new_errors: false,
       current_test: { failures: 1, appeared_on: commit_hash, last_seen: commit_hash }
     }
 
@@ -59,6 +61,7 @@ class BuildOutputParser
       test_name = stripped_line.match(%r{spec/([^\s]+)})[0].gsub(':in', '')
       test_key = test_name.tr('.', '_').tr('/', '_').tr(':', '_').to_sym
       s[:current_test][:module] = test_name
+      s[:new_errors] = true
       if s[:errors].key?(test_key)
         s[:errors][test_key][:failures] += 1
         s[:errors][test_key][:seed] = s[:seed]
@@ -69,11 +72,14 @@ class BuildOutputParser
       s[:current_test] = { failures: 1 }
     end
 
-    results[:errors]
+    results.slice(:new_errors, :errors)
   end
 
   def parse_js_errors(state, raw_output_path, commit_hash)
-    initial_s = { watching_test: false, current_module: nil, seed: nil, current_test_key: nil, errors: state }
+    initial_s = { 
+      watching_test: false, current_module: nil, seed: nil, 
+      current_test_key: nil, errors: state, new_errors: false
+    }
 
     results = File.foreach(raw_output_path).each_with_object(initial_s) do |line, s|
       stripped_line = line.strip
@@ -90,6 +96,7 @@ class BuildOutputParser
 
       if test_line
         s[:current_test_key] = build_test_key(stripped_line)
+        s[:new_errors] = true
 
         if s[:errors].key?(s[:current_test_key])
           s[:errors][s[:current_test_key]][:failures] += 1
@@ -110,7 +117,7 @@ class BuildOutputParser
       end
     end
 
-    results[:errors]
+    results.slice(:new_errors, :errors)
   end
 
   def build_test_key(raw)

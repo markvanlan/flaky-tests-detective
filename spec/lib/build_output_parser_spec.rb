@@ -11,6 +11,7 @@ RSpec.describe BuildOutputParser do
       results = subject.parse_raw_from clean_state, raw_output_path
 
       expect(results.dig(:metadata, :runs)).to eq clean_state.dig(:metadata, :runs) + 1
+      expect(results.dig(:metadata, :new_errors)).to eq false
     end
 
     it 'Returns the last stable commit hash' do
@@ -59,6 +60,7 @@ RSpec.describe BuildOutputParser do
       failed_test = second_run.dig(:js_tests, test_name)
 
       expect(failed_test[:failures]).to eq 2
+      expect(second_run.dig(:metadata, :new_errors)).to eq true
     end
 
     it 'Stores the seed' do
@@ -97,6 +99,7 @@ RSpec.describe BuildOutputParser do
       failed_test = second_run.dig(:ruby_tests, test_name)
 
       expect(failed_test[:failures]).to eq 2
+      expect(second_run.dig(:metadata, :new_errors)).to eq true
     end
 
     it 'Stores the seed' do

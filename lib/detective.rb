@@ -2,6 +2,7 @@
 
 require_relative 'build_output_parser.rb'
 require 'json'
+require 'fileutils'
 
 class Detective
   def self.build_detective
@@ -17,8 +18,14 @@ class Detective
     raise ArgumentError, 'Missing output path' unless output_path
 
     full_output_path = full_path(output_path)
+    latest_build_path = full_path(build_path)
 
-    results = @parser.parse_raw_from lift_state(full_output_path), full_path(build_path)
+    results = @parser.parse_raw_from lift_state(full_output_path), latest_build_path
+
+    if results.dig(:metadata, :new_errors)
+      new_sample_name = "../../reports/failed_build_run_#{results.dig(:metadata, :runs)}.txt"
+      FileUtils.cp(latest_build_path, full_path(new_sample_name))
+    end
 
     File.write(full_output_path, results.to_json)
   end

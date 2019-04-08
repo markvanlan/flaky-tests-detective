@@ -65,6 +65,7 @@ class BuildOutputParser
       if s[:errors].key?(test_key)
         s[:errors][test_key][:failures] += 1
         s[:errors][test_key][:seed] = s[:seed]
+        s[:errors][test_key][:last_seen] = commit_hash
       else
         s[:errors][test_key] = s[:current_test].merge(seed: s[:seed])
       end

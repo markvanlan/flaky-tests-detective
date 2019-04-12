@@ -22,6 +22,7 @@ class BuildReportParser
 
     ordered_tests.reduce(test_output) do |result, test|
       result << "Test: #{test[:module]}"
+      result << "Author: #{blame(test[:module])}"
       result << "Failures: #{test[:failures]}"
       result << "Appeared on: #{test[:appeared_on]}- Last seen: #{test[:last_seen]}"
       result << "Seed: #{test[:seed]}"
@@ -29,6 +30,12 @@ class BuildReportParser
       result << "Assertion: #{test[:result]}"
       result << draw_line
     end << ''
+  end
+
+  def blame(test_path)
+    file, line = test_path.split(':')
+
+    `git blame -L #{line},#{line} -- #{file} | cat`
   end
 
   def js_tests(tests_report)

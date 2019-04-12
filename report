@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Run this from the discourse directory
+git checkout tests-passed
+git fetch
+git reset --hard origin/tests-passed
+ruby ../flaky-tests-detective/generate_report.rb '../../reports/build_report.json'

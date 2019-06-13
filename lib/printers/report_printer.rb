@@ -27,12 +27,14 @@ class ReportPrinter
 
   def build_ruby_failures(ruby_json)
     index = 0
-    ruby_json.reduce('') do |memo, (_,v)|
+    ordered_tests = ruby_json.values.sort_by { |r| -r[:failures] } 
+    
+    ordered_tests.reduce('') do |memo, test|
       index += 1
       memo += <<~eos
-      #{index}. #{v[:module]}
-        - Failures: #{v[:failures]}
-        #{details(v)}
+      #{index}. #{test[:module]}
+        - Failures: #{test[:failures]}
+        #{details(test)}
 
       eos
     end
@@ -40,13 +42,17 @@ class ReportPrinter
 
   def build_js_failures(js_json)
     index = 0
-    js_json.reduce('') do |memo, (k,v)|
+    with_test_data = js_json 
+    with_test_data.each { |t, r| r[:test] = t }
+    ordered_tests = with_test_data.values.sort_by { |r| -r[:failures] }
+
+    ordered_tests.reduce('') do |memo, test|
       index += 1
       memo += <<~eos
-      #{index}. #{k.to_s.gsub('_', ' ')}
-        - Failures: #{v[:failures]}
-        - #{v[:module]}
-        #{details(v)}
+      #{index}. #{test[:test].to_s.gsub('_', ' ')}
+        - Failures: #{test[:failures]}
+        - #{test[:module]}
+        #{details(test)}
 
       eos
     end

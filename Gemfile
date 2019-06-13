@@ -8,4 +8,5 @@ group :test do
   gem 'rspec'
 end
 
+gem 'discourse_api'
 gem 'json'

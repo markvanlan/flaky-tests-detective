@@ -1,10 +1,10 @@
 require_relative '../../spec_helper.rb'
-require_relative '../../../lib/printers/report_printer.rb'
+require_relative '../../../lib/printers/markdown_printer.rb'
 require 'json'
 require 'fileutils'
 require 'date'
 
-RSpec.describe ReportPrinter do
+RSpec.describe MarkdownPrinter do
   let(:raw_json_path) { File.expand_path('../../examples/build_report.json', __dir__) }
   let(:json_report) { JSON.parse(File.read(raw_json_path), symbolize_names: true) }
 

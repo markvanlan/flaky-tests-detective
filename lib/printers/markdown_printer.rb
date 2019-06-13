@@ -2,7 +2,7 @@
 
 require 'date'
 
-class ReportPrinter
+class MarkdownPrinter
   def print_from(report)
     <<~eos
     ## Flakey tests report - #{Date.today.strftime('%m/%d/%Y')}

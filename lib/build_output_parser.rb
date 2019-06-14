@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 class BuildOutputParser
-  def parse_raw_from(state, raw_output_path)
-    commit_hash = parse_commit_hash(raw_output_path)
-    ruby_errors = parse_ruby_errors(state[:ruby_tests], raw_output_path, commit_hash)
-    js_errors = parse_js_errors(state[:js_tests], raw_output_path, commit_hash)
+  def parse_raw_from(archive)
+    state = archive.tests_report
+    commit_hash = parse_commit_hash(archive)
+    ruby_errors = parse_ruby_errors(state[:ruby_tests], archive, commit_hash)
+    js_errors = parse_js_errors(state[:js_tests], archive, commit_hash)
 
     {
       metadata: {
@@ -18,8 +19,8 @@ class BuildOutputParser
 
   private
 
-  def parse_commit_hash(raw_output_path)
-    result = File.foreach(raw_output_path).each_with_object(checked_latest: false, hash: nil) do |line, s|
+  def parse_commit_hash(archive)
+    result = archive.raw_build_iterator.each_with_object(checked_latest: false, hash: nil) do |line, s|
       s[:checked_latest] = s[:checked_latest] || line.include?("You are in 'detached HEAD' state.")
       next(s) unless s[:checked_latest]
 
@@ -33,13 +34,13 @@ class BuildOutputParser
     result[:hash]
   end
 
-  def parse_ruby_errors(state, raw_output_path, commit_hash)
+  def parse_ruby_errors(state, archive, commit_hash)
     initial_s = {
       failure_zone: false, seed: nil, errors: state, new_errors: false,
       current_test: { failures: 1, appeared_on: commit_hash, last_seen: commit_hash }
     }
 
-    results = File.foreach(raw_output_path).each_with_object(initial_s) do |line, s|
+    results = archive.raw_build_iterator.each_with_object(initial_s) do |line, s|
       stripped_line = line.strip
 
       break(s) if stripped_line.include? 'Finished in'
@@ -72,13 +73,13 @@ class BuildOutputParser
     results.slice(:new_errors, :errors)
   end
 
-  def parse_js_errors(state, raw_output_path, commit_hash)
+  def parse_js_errors(state, archive, commit_hash)
     initial_s = { 
       watching_test: false, current_module: nil, seed: nil, 
       current_test_key: nil, errors: state, new_errors: false
     }
 
-    results = File.foreach(raw_output_path).each_with_object(initial_s) do |line, s|
+    results = archive.raw_build_iterator.each_with_object(initial_s) do |line, s|
       stripped_line = line.strip
       s[:seed] = stripped_line.match(/\d+/)[0] if stripped_line.include? 'Running: {"seed":'
       module_failed_line = stripped_line.include? 'Module Failed'

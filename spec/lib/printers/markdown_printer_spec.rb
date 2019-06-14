@@ -5,7 +5,7 @@ require 'fileutils'
 require 'date'
 
 RSpec.describe MarkdownPrinter do
-  let(:raw_json_path) { File.expand_path('../../examples/build_report.json', __dir__) }
+  let(:raw_json_path) { File.expand_path('../../examples/reports/build_report.json', __dir__) }
   let(:json_report) { JSON.parse(File.read(raw_json_path), symbolize_names: true) }
 
   it 'includes the title' do

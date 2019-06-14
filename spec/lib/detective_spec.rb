@@ -10,10 +10,12 @@ RSpec.describe Detective do
       }
     end
 
+    let(:archive) { MemoryArchive.new(raw_report, { ruby_tests: {}, js_tests: {}}) }
+
     it 'filters tests with less than one failures' do
       threshold = 1
 
-      report = build_report(threshold)
+      report = build_report(threshold, archive)
 
       expect(selected_tests(report)).to contain_exactly(:test_ruby_a, :test_ruby_b, :test_js_a, :test_js_b)
     end
@@ -21,7 +23,7 @@ RSpec.describe Detective do
     it 'filters tests with less than two failures' do
       threshold = 2
 
-      report = build_report(threshold)
+      report = build_report(threshold, archive)
 
       expect(selected_tests(report)).to contain_exactly(:test_ruby_b, :test_js_a, :test_js_b)
     end
@@ -29,7 +31,7 @@ RSpec.describe Detective do
     it 'filters tests with less than five failures' do
       threshold = 5
 
-      report = build_report(threshold)
+      report = build_report(threshold, archive)
 
       expect(selected_tests(report)).to contain_exactly(:test_js_a)
     end
@@ -41,11 +43,13 @@ RSpec.describe Detective do
           js_tests: { test_js_a: { failures: 6 }, test_js_b: { failures: 2 } }
         }
       end
+
+      let(:archive) { MemoryArchive.new(raw_report, previous_report) }
     
       it 'returns the test that changed since the last report' do
         threshold = 2
 
-        report = build_report(threshold, previous_report)
+        report = build_report(threshold, archive)
 
         expect(selected_tests(report)).to contain_exactly(:test_ruby_b, :test_js_b)
       end
@@ -53,14 +57,14 @@ RSpec.describe Detective do
       it 'takes the threshold into account' do
         threshold = 5
 
-        report = build_report(threshold, previous_report)
+        report = build_report(threshold, archive)
 
         expect(selected_tests(report)).to be_empty
       end
     end
     
-    def build_report(threshold, previous_report = subject.send(:clean_report))
-      subject.report_for(NoopPrinter.new, threshold, raw_report, previous_report)
+    def build_report(threshold, archive)
+      subject.report_for(NoopPrinter.new, threshold, archive)
     end
 
     def selected_tests(report)
@@ -72,5 +76,14 @@ RSpec.describe Detective do
     def print_from(report)
       report
     end
+  end
+
+  class MemoryArchive
+    def initialize(report, last_report_sent)
+      @tests_report = report
+      @last_report_sent = last_report_sent
+    end
+
+    attr_reader :tests_report, :last_report_sent
   end
 end

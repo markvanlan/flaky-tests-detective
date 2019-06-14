@@ -6,9 +6,6 @@ require 'fileutils'
 
 class Detective
   def investigate(build_parse, build_path, output_path)
-    raise ArgumentError, 'Missing build to investigate' unless build_path
-    raise ArgumentError, 'Missing output path' unless output_path
-
     full_output_path = full_path(output_path)
     latest_build_path = full_path(build_path)
     
@@ -16,23 +13,26 @@ class Detective
     File.write(full_output_path, results.to_json)
   end
 
-  def report_for(report_printer, raw_report, threshold)
+  def report_for(report_printer, threshold, raw_report, previous_report = clean_report)
     filtered_report = raw_report.dup
-    remove_below_threshold!(filtered_report, :ruby_tests, threshold)
-    remove_below_threshold!(filtered_report, :js_tests, threshold)
+    curate_report!(filtered_report, previous_report, :ruby_tests, threshold)
+    curate_report!(filtered_report, previous_report, :js_tests, threshold)
 
     report_printer.print_from(filtered_report)
   end
 
-  def report_to(client, remote_topic_id, report_printer, raw_report, threshold)
-    report = report_for(report_printer, raw_report, threshold)
+  def report_to(client, remote_topic_id, report_printer, raw_report, previous_report, threshold)
+    report = report_for(report_printer, threshold, raw_report, previous_report)
     client.create_post(topic_id: remote_topic_id, raw: report)
   end
 
   private
 
-  def remove_below_threshold!(report, test_key, threshold)
-    report[test_key].delete_if { |_, test| test[:failures] < threshold }
+  def curate_report!(report, previous_report, test_key, threshold)
+    report[test_key].delete_if do |test_name, test| 
+      test[:failures] < threshold || 
+      report.dig(test_key, test_name, :failures) == previous_report.dig(test_key, test_name, :failures)
+    end
   end
 
   def full_path(relative_path)

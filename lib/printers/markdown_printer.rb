@@ -8,6 +8,7 @@ class MarkdownPrinter
       ## Flakey tests report - #{Date.today.strftime('%m/%d/%Y')}
 
       >Total runs: #{report.dig(:metadata, :runs)}
+      >Runs since last report: #{report.dig(:metadata, :report_runs)}
       >Last commit: #{report.dig(:metadata, :last_commit_hash)}
     eos
     if report[:ruby_tests].empty? && report[:js_tests].empty?

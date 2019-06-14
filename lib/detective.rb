@@ -12,6 +12,7 @@ class Detective
 
     curate_report!(filtered_report, previous_report, :ruby_tests, threshold)
     curate_report!(filtered_report, previous_report, :js_tests, threshold)
+    filtered_report[:metadata][:report_runs] = filtered_report.dig(:metadata, :runs) - previous_report.dig(:metadata, :runs)
 
     report_printer.print_from(filtered_report)
   end

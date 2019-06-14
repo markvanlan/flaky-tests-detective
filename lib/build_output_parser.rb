@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 class BuildOutputParser
-  def clean_state
-    { metadata: { runs: 0, last_commit_hash: nil }, ruby_tests: {}, js_tests: {} }
-  end
-
   def parse_raw_from(state, raw_output_path)
     commit_hash = parse_commit_hash(raw_output_path)
     ruby_errors = parse_ruby_errors(state[:ruby_tests], raw_output_path, commit_hash)

@@ -16,27 +16,35 @@ class Detective
     File.write(full_output_path, results.to_json)
   end
 
-  def report_for(report_printer, report_path)
-    raw_report = File.read full_path(report_path)
+  def report_for(report_printer, raw_report, threshold)
+    filtered_report = raw_report.dup
+    remove_below_threshold!(filtered_report, :ruby_tests, threshold)
+    remove_below_threshold!(filtered_report, :js_tests, threshold)
 
-    raw_report = JSON.parse(raw_report, symbolize_names: true)
-
-    report_printer.print_from(raw_report)
+    report_printer.print_from(filtered_report)
   end
 
-  def report_to(client, remote_topic_id, report_builder, report_path)
-    report = report_for(report_builder, report_path)
+  def report_to(client, remote_topic_id, report_printer, raw_report, threshold)
+    report = report_for(report_printer, raw_report, threshold)
     client.create_post(topic_id: remote_topic_id, raw: report)
   end
 
   private
 
+  def remove_below_threshold!(report, test_key, threshold)
+    report[test_key].delete_if { |_, test| test[:failures] < threshold }
+  end
+
   def full_path(relative_path)
     File.expand_path(relative_path, __FILE__)
   end
 
+  def clean_report
+    { metadata: { runs: 0, last_commit_hash: nil }, ruby_tests: {}, js_tests: {} }
+  end
+
   def lift_state(state_path)
-    return @parser.clean_state if File.zero?(state_path)
+    return clean_report if File.zero?(state_path)
 
     raw_state = File.read(state_path)
     JSON.parse(raw_state, symbolize_names: true)

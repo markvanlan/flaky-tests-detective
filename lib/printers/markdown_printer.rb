@@ -4,23 +4,30 @@ require 'date'
 
 class MarkdownPrinter
   def print_from(report)
-    <<~eos
-    ## Flakey tests report - #{Date.today.strftime('%m/%d/%Y')}
+    title = <<~eos
+      ## Flakey tests report - #{Date.today.strftime('%m/%d/%Y')}
 
-    >Total runs: #{report.dig(:metadata, :runs)}
-    >Last commit: #{report.dig(:metadata, :last_commit_hash)}
-
-    ### New findings:
-
-    ### Ruby
-    
-    #{build_ruby_failures(report[:ruby_tests])}
-
-    ### JS
-
-    #{build_js_failures(report[:js_tests])}
-    
+      >Total runs: #{report.dig(:metadata, :runs)}
+      >Last commit: #{report.dig(:metadata, :last_commit_hash)}
     eos
+    if report[:ruby_tests].empty? && report[:js_tests].empty?
+      <<~eos
+        #{title}
+
+        *Looks like I couldn't find any flakey tests this time :tada:*
+      eos
+    else
+      <<~eos
+        #{title}
+
+        ### New findings:
+
+        ### Ruby
+        #{build_ruby_failures(report[:ruby_tests])}
+        ### JS
+        #{build_js_failures(report[:js_tests])}
+      eos
+    end
   end
 
   private

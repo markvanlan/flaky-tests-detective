@@ -100,4 +100,16 @@ RSpec.describe MarkdownPrinter do
       expect(report).to include(expected)
     end
   end
+
+  context 'When report is empty' do
+    let(:json_report) { { ruby_tests: {}, js_tests: {} } }
+
+    it 'includes a message saying there is no new flakey tests' do
+      body =  "*Looks like I couldn't find any flakey tests this time :tada:*"
+
+      report = subject.print_from(json_report)
+
+      expect(report).to include(body)
+    end
+  end
 end

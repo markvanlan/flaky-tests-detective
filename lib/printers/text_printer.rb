@@ -1,7 +1,7 @@
 # frozen_string_literal: false
 
 class TextPrinter
-  def parse_raw_from(raw_report)
+  def print_from(raw_report)
     plain_report = headers [], raw_report[:metadata]
     plain_report << ruby_tests(raw_report[:ruby_tests])
     plain_report << js_tests(raw_report[:js_tests])

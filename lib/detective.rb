@@ -12,7 +12,7 @@ class Detective
 
     curate_report!(filtered_report, previous_report, :ruby_tests, threshold)
     curate_report!(filtered_report, previous_report, :js_tests, threshold)
-    filtered_report[:metadata][:report_runs] = filtered_report.dig(:metadata, :runs) - previous_report.dig(:metadata, :runs)
+    filtered_report[:metadata][:report_runs] = runs(filtered_report) - runs(previous_report)
 
     report_printer.print_from(filtered_report)
   end
@@ -20,9 +20,16 @@ class Detective
   def report_to(client, remote_topic_id, report_printer, archive, threshold)
     report = report_for(report_printer, threshold, archive)
     client.create_post(topic_id: remote_topic_id, raw: report)
+    archive.update_last_report_sent
+  rescue DiscourseApi::Error => e
+    e.message
   end
 
   private
+
+  def runs(report)
+    report.dig(:metadata, :runs).to_i
+  end
 
   def curate_report!(report, previous_report, test_key, threshold)
     report[test_key].delete_if do |test_name, test| 

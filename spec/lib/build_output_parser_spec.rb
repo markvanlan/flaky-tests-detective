@@ -1,13 +1,16 @@
 require_relative '../spec_helper.rb'
 require_relative '../../lib/build_output_parser.rb'
-require_relative '../../lib/archive.rb'
+require_relative '../../lib/archives/file_system_archive.rb'
 
 RSpec.describe BuildOutputParser do
   let(:clean_state) do
     { metadata: { runs: 0, last_commit_hash: nil }, ruby_tests: {}, js_tests: {} }
   end
 
-  before { @archive = Archive.new('../../spec/examples', raw_output_path) }
+  before do
+    working_dir = File.expand_path('../../examples', __FILE__)
+    @archive = FileSystemArchive.new(working_dir, raw_output_path)
+  end
 
   after { @archive.destroy_tests_report }
 

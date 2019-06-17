@@ -3,18 +3,19 @@
 require 'json'
 require 'fileutils'
 
-class Archive
+class FileSystemArchive
   def initialize(working_dir, last_build_file_name)
     @working_dir = working_dir
     @last_build_file_name = last_build_file_name
   end
 
   def tests_report
-    find_report(tests_report_path)
+    @test_report ||= find_report(tests_report_path)
   end
 
   def store_tests_report(report)
     File.write(tests_report_path, report.to_json)
+    @test_report = report
   end
 
   def destroy_tests_report
@@ -22,11 +23,12 @@ class Archive
   end
 
   def last_report_sent
-    find_report(last_report_path)
+    @last_report_sent ||= find_report(last_report_path)
   end
 
-  def update_last_report_sent(report)
-    File.write(last_report_path, report.to_json)
+  def update_last_report_sent
+    File.write(last_report_path, tests_report.to_json)
+    @last_report_sent = tests_report
   end
 
   def clean_report
@@ -34,28 +36,23 @@ class Archive
   end
 
   def raw_build_iterator
-    File.foreach(full_path("#{@working_dir}/#{@last_build_file_name}"))
+    File.foreach("#{@working_dir}/#{@last_build_file_name}")
   end
 
   private
 
   def last_report_path
-    full_path("#{@working_dir}/last_report_sent.json")
+    "#{@working_dir}/last_report_sent.json"
   end
 
   def tests_report_path
-    full_path("#{@working_dir}/build_report.json")
+    "#{@working_dir}/build_report.json"
   end
 
-  def full_path(relative)
-    File.expand_path(relative, __FILE__)
-  end
+  def find_report(report_path)
+    return clean_report unless File.exist?(report_path)
 
-  def find_report(report_name)
-    path = full_path(report_name)
-    return clean_report unless File.exist?(path)
-
-    raw_report = File.read(path)
+    raw_report = File.read(report_path)
 
     JSON.parse(raw_report, symbolize_names: true)
   end

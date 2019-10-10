@@ -23,10 +23,10 @@ class MarkdownPrinter
 
         ### New findings:
 
-        ### Ruby
+        ### Ruby [#{report[:ruby_tests].size} failures]
 
         #{build_ruby_failures(report[:ruby_tests])}
-        ### JS
+        ### JS [#{report[:js_tests].size} failures]
 
         #{build_js_failures(report[:js_tests])}
       eos
@@ -73,7 +73,9 @@ class MarkdownPrinter
       - **First seen:** #{test[:appeared_on]}
       - **Last seen:** #{test[:last_seen]}
       - **Assertion:** #{test[:assertion]}
-      - **Result:** ```#{test[:result]}```
+      - **Result:** ```
+        #{test[:result]}
+      ```
     </details>
     eos
   end

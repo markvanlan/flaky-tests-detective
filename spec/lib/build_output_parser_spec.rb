@@ -84,12 +84,15 @@ RSpec.describe BuildOutputParser do
 
   describe 'Parsing a build with RSpec errors' do
     let(:raw_output_path) { 'rspec_failed_run.txt' }
-    let(:test_name) { :spec_requests_finish_installation_controller_spec_rb_13 }
+    let(:test_name) { :__spec_requests_finish_installation_controller_spec_rb_11 }
 
     it 'Parses and stores failed tests' do
-      test_failed_assertion = "FinishInstallationController#index has_login_hint is false doesn't allow access"
-      test_assertion_result = 'expected `#<ActionDispatch::TestResponse:0x000055a703336698 @mon_mutex=#<Thread::Mutex:0x000055a703336620>, @mo..., @method=nil, @request_method=nil, @remote_ip=nil, @original_fullpath=nil, @fullpath=nil, @ip=nil>>.forbidden?` to return false, got true'
-      test_module = 'spec/requests/finish_installation_controller_spec.rb:13'
+      test_failed_assertion = "index has_login_hint is false doesn't allow access"
+      test_assertion_result = <<~EOS
+        Failure/Error: expect(response).not_to be_forbidden 
+        expected `#<ActionDispatch::TestResponse:0x000055a703336698 @mon_mutex=#<Thread::Mutex:0x000055a703336620>, @mo..., @method=nil, @request_method=nil, @remote_ip=nil, @original_fullpath=nil, @fullpath=nil, @ip=nil>>.forbidden?` to return false, got true 
+      EOS
+      test_module = './spec/requests/finish_installation_controller_spec.rb:11'
 
       parsed_output = subject.parse_raw_from(@archive)
       failed_test = parsed_output.dig(:ruby_tests, test_name)

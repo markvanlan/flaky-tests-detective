@@ -35,42 +35,78 @@ class BuildOutputParser
   end
 
   def parse_ruby_errors(state, archive, commit_hash)
+    test_template = { failures: 1, appeared_on: commit_hash, last_seen: commit_hash }
+
     initial_s = {
-      failure_zone: false, seed: nil, errors: state, new_errors: false,
-      current_test: { failures: 1, appeared_on: commit_hash, last_seen: commit_hash }
+      failure_zone: false, failure_list: false,
+      errors: state, new_errors: false, test_number: 0,
+      results: []
     }
 
     results = archive.raw_build_iterator.each_with_object(initial_s) do |line, s|
       stripped_line = line.strip
 
-      break(s) if stripped_line.include? 'Finished in'
-
-      s[:seed] = stripped_line.match(/\d+/)[0] if stripped_line.include? 'Randomized with seed'
-
-      s[:failure_zone] = s[:failure_zone] || stripped_line.include?('Failures:')
-      next(s) unless s[:failure_zone]
-
-      s[:current_test][:assertion] = stripped_line.gsub(/\d\)/, '').strip if stripped_line.match?(/\d\)/)
-      s[:current_test][:result] = stripped_line if stripped_line.include? 'expected'
-
-      next unless stripped_line.include? './spec/'
-
-      test_name = stripped_line.match(%r{spec/([^\s]+)})[0].gsub(':in', '')
-      test_key = test_name.tr('.', '_').tr('/', '_').tr(':', '_').to_sym
-      s[:current_test][:module] = test_name
-      s[:new_errors] = true
-      if s[:errors].key?(test_key)
-        s[:errors][test_key][:failures] += 1
-        s[:errors][test_key][:seed] = s[:seed]
-        s[:errors][test_key][:last_seen] = commit_hash
-      else
-        s[:errors][test_key] = s[:current_test].merge(seed: s[:seed])
+      if stripped_line.include? 'Randomized with seed'
+        test_template[:seed] = stripped_line.match(/\d+/)[0]
       end
 
-      s[:current_test] = { failures: 1 }
+      s[:failure_zone] = s[:failure_zone] || stripped_line.include?('Failures:')
+      s[:failure_list] = s[:failure_list] || stripped_line.include?('Failed examples:')
+      if s[:failure_list]
+        s[:test_number] = 0
+        s[:failure_zone] = false
+      end
+
+      if s[:failure_zone]
+        new_test = stripped_line.match?(/\d\)/)
+        s[:watching_test] = s[:watching_test] || new_test
+        
+        gather_ruby_test_errors(s, new_test, stripped_line)
+      elsif s[:failure_list]
+        test_line = stripped_line.include? 'rspec'
+        update_errors_report(s, test_line, stripped_line, test_template)
+      end
     end
 
     results.slice(:new_errors, :errors)
+  end
+
+  def gather_ruby_test_errors(state, is_new_test, line)
+    if is_new_test
+      state[:results] << ''
+    elsif state[:watching_test]
+      backtrace_end = line.include? '# ./'  
+      if backtrace_end
+        state[:watching_test] = false
+        state[:test_number] += 1
+      else
+        tn = state[:test_number]
+        state[:results][tn] += "#{line} \n"
+      end
+    end
+  end
+
+  def update_errors_report(state, is_test_line, line, test_template)
+    if is_test_line
+      state[:new_errors] = true
+
+      test_data = line.gsub('rspec', '').split('#')
+      test_key = test_data.first.strip
+        .tr('./', '_').tr('.', '_').tr('/', '_').tr(':', '_').to_sym
+      if state[:errors].key?(test_key)
+        state[:errors][test_key][:failures] += 1
+        state[:errors][test_key][:seed] = test_template[:seed]
+        state[:errors][test_key][:last_seen] = test_template[:last_seen]
+      else
+        state[:errors][test_key] = test_template.merge(
+          module: test_data.first.strip,
+          result: state[:results][state[:test_number]],
+          assertion: test_data.last,
+        )
+      end
+
+      state[:test_number] += 1
+    end
   end
 
   def parse_js_errors(state, archive, commit_hash)

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 mkdir -p ./reports
-touch ./reports/build_report.json
 touch ./reports/last_build.txt
 
 while :
